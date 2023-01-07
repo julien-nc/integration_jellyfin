@@ -100,6 +100,12 @@ class JellyfinAPIService {
 		return $this->request($userId, $endpoint, $params, 'GET', true);
 	}
 
+	/**
+	 * @param string $serverUrl
+	 * @param string $login
+	 * @param string $password
+	 * @return array
+	 */
 	public function login(string $serverUrl, string $login, string $password): array {
 		try {
 			$url = $serverUrl . '/Users/AuthenticateByName';
@@ -137,6 +143,10 @@ class JellyfinAPIService {
 			$this->logger->warning('Jellyfin login error : ' . $e->getMessage(), ['app' => Application::APP_ID]);
 			return ['error' => $e->getMessage()];
 		}
+	}
+
+	public function logout(string $userId): array {
+		return $this->request($userId, 'sessions/logout', [], 'POST');
 	}
 
 	/**

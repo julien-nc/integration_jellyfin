@@ -47,22 +47,24 @@ class ConfigController extends Controller {
 			return $this->loginWithCredentials($values['server_url'], $values['login'], $values['password']);
 		}
 
-		foreach ($values as $key => $value) {
-			$this->config->setUserValue($this->userId, Application::APP_ID, $key, $value);
-		}
-
 		$result = [];
-
 		if (isset($values['user_name'])) {
 //			$this->jellyfinReferenceProvider->invalidateUserCache($this->userId);
 			if ($values['user_name'] === '') {
+				$logoutResponse = $this->jellyfinAPIService->logout($this->userId);
 				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'user_id');
 				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'user_name');
 				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'server_id');
 				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'server_name');
 				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'token');
+				return new DataResponse($result);
 			}
 		}
+
+		foreach ($values as $key => $value) {
+			$this->config->setUserValue($this->userId, Application::APP_ID, $key, $value);
+		}
+
 		return new DataResponse($result);
 	}
 
