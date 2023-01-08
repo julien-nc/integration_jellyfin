@@ -8,7 +8,7 @@ use OCP\Settings\ISettings;
 
 use OCA\Jellyfin\AppInfo\Application;
 
-class Personal implements ISettings {
+class Admin implements ISettings {
 
 	private IConfig $config;
 	private IInitialState $initialStateService;
@@ -26,20 +26,21 @@ class Personal implements ISettings {
 	 * @return TemplateResponse
 	 */
 	public function getForm(): TemplateResponse {
-		$searchItemsEnabled = $this->config->getUserValue($this->userId, Application::APP_ID, 'search_items_enabled', '1') === '1';
-		$navigationEnabled = $this->config->getUserValue($this->userId, Application::APP_ID, 'navigation_enabled', '0') === '1';
-		$linkPreviewEnabled = $this->config->getUserValue($this->userId, Application::APP_ID, 'link_preview_enabled', '1') === '1';
-
+		$token = $this->config->getAppValue(Application::APP_ID, 'token');
+		$jfUserId = $this->config->getAppValue(Application::APP_ID, 'user_id');
+		$jfUserName = $this->config->getAppValue(Application::APP_ID, 'user_name');
+		$jfServerId = $this->config->getAppValue(Application::APP_ID, 'server_id');
 		$jfServerUrl = $this->config->getAppValue(Application::APP_ID, 'server_url');
 
 		$userConfig = [
-			'search_items_enabled' => $searchItemsEnabled,
-			'navigation_enabled' => $navigationEnabled ,
-			'link_preview_enabled' => $linkPreviewEnabled,
+			'token' => $token,
+			'user_id' => $jfUserId,
+			'user_name' => $jfUserName,
+			'server_id' => $jfServerId,
 			'server_url' => $jfServerUrl,
 		];
-		$this->initialStateService->provideInitialState('user-config', $userConfig);
-		return new TemplateResponse(Application::APP_ID, 'personalSettings');
+		$this->initialStateService->provideInitialState('admin-config', $userConfig);
+		return new TemplateResponse(Application::APP_ID, 'adminSettings');
 	}
 
 	public function getSection(): string {

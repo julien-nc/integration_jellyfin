@@ -24,6 +24,7 @@ namespace OCA\Jellyfin\Reference;
 
 use OC\Collaboration\Reference\LinkReferenceProvider;
 use OCP\Collaboration\Reference\ADiscoverableReferenceProvider;
+use OCP\Collaboration\Reference\ISearchableReferenceProvider;
 use OCP\Collaboration\Reference\Reference;
 use OC\Collaboration\Reference\ReferenceManager;
 use OCA\Jellyfin\AppInfo\Application;
@@ -34,7 +35,7 @@ use OCP\IL10N;
 
 use OCP\IURLGenerator;
 
-class JellyfinReferenceProvider extends ADiscoverableReferenceProvider {
+class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implements ISearchableReferenceProvider {
 
 	private const RICH_OBJECT_TYPE = Application::APP_ID . '_item';
 
@@ -90,6 +91,21 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider {
 		return $this->urlGenerator->getAbsoluteURL(
 			$this->urlGenerator->imagePath(Application::APP_ID, 'app-dark.svg')
 		);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getSupportedSearchProviderIds(): array {
+		if ($this->userId !== null) {
+			$ids = [];
+			$searchItemsEnabled = $this->config->getUserValue($this->userId, Application::APP_ID, 'search_items_enabled', '1') === '1';
+			if ($searchItemsEnabled) {
+				$ids[] = 'jellyfin-search-items';
+			}
+			return $ids;
+		}
+		return ['jellyfin-search-items'];
 	}
 
 	/**

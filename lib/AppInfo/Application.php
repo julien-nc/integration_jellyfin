@@ -13,6 +13,7 @@ namespace OCA\Jellyfin\AppInfo;
 //use OCA\Jellyfin\Reference\JellyfinReferenceProvider;
 use Closure;
 //use OCP\Collaboration\Reference\RenderReferenceEvent;
+use OCA\Jellyfin\Reference\JellyfinReferenceProvider;
 use OCP\IConfig;
 
 use OCP\AppFramework\App;
@@ -41,7 +42,7 @@ class Application extends App implements IBootstrap {
 	public function register(IRegistrationContext $context): void {
 		$context->registerSearchProvider(JellyfinSearchItemsProvider::class);
 
-//		$context->registerReferenceProvider(JellyfinReferenceProvider::class);
+		$context->registerReferenceProvider(JellyfinReferenceProvider::class);
 //		$context->registerEventListener(RenderReferenceEvent::class, JellyfinReferenceListener::class);
 	}
 
@@ -56,11 +57,11 @@ class Application extends App implements IBootstrap {
 			$container = $this->getContainer();
 
 			if ($this->config->getUserValue($userId, self::APP_ID, 'navigation_enabled', '0') === '1') {
-				$jellyfinUrl = $this->config->getUserValue($userId, self::APP_ID, 'server_url');
+				$jellyfinUrl = $this->config->getAppValue(self::APP_ID, 'server_url');
 				if ($jellyfinUrl === '') {
 					return;
 				}
-				$serverName = $this->config->getUserValue($userId, self::APP_ID, 'server_name');
+				$serverName = $this->config->getAppValue(self::APP_ID, 'server_name');
 				$l10n = $container->get(IL10N::class);
 				$navName = $serverName ?: $l10n->t('Jellyfin');
 				$container->get(INavigationManager::class)->add(function () use ($container, $jellyfinUrl, $navName) {

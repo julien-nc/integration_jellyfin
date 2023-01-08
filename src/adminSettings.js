@@ -11,7 +11,7 @@
 
 import Vue from 'vue'
 import './bootstrap.js'
-import PersonalSettings from './components/PersonalSettings.vue'
+import AdminSettings from './components/AdminSettings.vue'
 
-const VueSettings = Vue.extend(PersonalSettings)
+const VueSettings = Vue.extend(AdminSettings)
 new VueSettings().$mount('#jellyfin_prefs')

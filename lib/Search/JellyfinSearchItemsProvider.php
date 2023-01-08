@@ -135,7 +135,14 @@ class JellyfinSearchItemsProvider implements IProvider {
 	}
 
 	protected function getLink(array $entry): string {
-		return $entry['123'] ?? '';
+		return $this->urlGenerator->getAbsoluteURL(
+			$this->urlGenerator->linkToRoute(
+				Application::APP_ID . '.jellyfinAPI.internalMediaLink',
+				[
+					'itemId' => $entry['Id'],
+				]
+			)
+		);
 	}
 
 	protected function getIconUrl(array $entry): string {

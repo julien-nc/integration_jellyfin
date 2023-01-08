@@ -20,6 +20,8 @@
         <nextcloud min-version="26" max-version="26"/>
     </dependencies>
     <settings>
+        <admin>OCA\Jellyfin\Settings\Admin</admin>
+        <admin-section>OCA\Jellyfin\Settings\AdminSection</admin-section>
         <personal>OCA\Jellyfin\Settings\Personal</personal>
         <personal-section>OCA\Jellyfin\Settings\PersonalSection</personal-section>
     </settings>

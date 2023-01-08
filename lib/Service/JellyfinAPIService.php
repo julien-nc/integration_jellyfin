@@ -51,11 +51,25 @@ class JellyfinAPIService {
 	 * @return array
 	 */
 	public function getItemInfo(string $itemId): array {
+		// TODO
 		$response = $this->request($itemId);
 		if (!isset($response['error']) && isset($response['data'])) {
 			return $response['data'];
 		}
 		return $response;
+	}
+
+	/**
+	 * @param string $itemId
+	 * @return string|null
+	 */
+	public function getDownloadLink(string $itemId): ?string {
+		$token = $this->config->getAppValue(Application::APP_ID, 'token');
+		$jfServerUrl = $this->config->getAppValue(Application::APP_ID, 'server_url');
+		if ($token && $jfServerUrl) {
+			return $jfServerUrl . '/items/' . $itemId . '/download?api_key=' . $token;
+		}
+		return null;
 	}
 
 	/**
@@ -68,7 +82,7 @@ class JellyfinAPIService {
 	 * @return array request result
 	 */
 	public function searchItems(string $userId, string $query, int $offset = 0, int $limit = 5): array {
-		$jfUserId = $this->config->getUserValue($userId, Application::APP_ID, 'user_id');
+		$jfUserId = $this->config->getAppValue(Application::APP_ID, 'user_id');
 		$params = [
 			'searchTerm' => $query,
 			'Recursive' => 'true',
@@ -145,22 +159,22 @@ class JellyfinAPIService {
 		}
 	}
 
-	public function logout(string $userId): array {
-		return $this->request($userId, 'sessions/logout', [], 'POST');
+	public function logout(): array {
+		return $this->request(null, 'sessions/logout', [], 'POST');
 	}
 
 	/**
 	 * Make an HTTP request to the Jellyfin API
-	 * @param string $userId
+	 * @param string|null $userId
 	 * @param string $endPoint The path to reach in api.github.com
 	 * @param array $params Query parameters (key/val pairs)
 	 * @param string $method HTTP query method
 	 * @param bool $rawResponse
 	 * @return array decoded request result or error
 	 */
-	public function request(string $userId, string $endPoint, array $params = [], string $method = 'GET', bool $rawResponse = false): array {
-		$jfServerUrl = $this->config->getUserValue($userId, Application::APP_ID, 'server_url');
-		$token = $this->config->getUserValue($userId, Application::APP_ID, 'token');
+	public function request(?string $userId, string $endPoint, array $params = [], string $method = 'GET', bool $rawResponse = false): array {
+		$jfServerUrl = $this->config->getAppValue(Application::APP_ID, 'server_url');
+		$token = $this->config->getAppValue(Application::APP_ID, 'token');
 		try {
 			$url = $jfServerUrl . '/' . $endPoint;
 			$options = [
@@ -211,9 +225,9 @@ class JellyfinAPIService {
 			$parsedResponseBody = json_decode($responseBody, true);
 			if ($e->getResponse()->getStatusCode() === 404) {
 				// Only log inaccessible github links as debug
-				$this->logger->debug('Jellyfin API error : ' . $e->getMessage(), ['response_body' => $responseBody, 'app' => Application::APP_ID]);
+				$this->logger->debug('Jellyfin API error : ' . $e->getMessage(), ['response_body' => $parsedResponseBody, 'app' => Application::APP_ID]);
 			} else {
-				$this->logger->warning('Jellyfin API error : ' . $e->getMessage(), ['response_body' => $responseBody, 'app' => Application::APP_ID]);
+				$this->logger->warning('Jellyfin API error : ' . $e->getMessage(), ['response_body' => $parsedResponseBody, 'app' => Application::APP_ID]);
 			}
 			return [
 				'error' => $e->getMessage(),

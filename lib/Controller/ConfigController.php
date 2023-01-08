@@ -43,6 +43,18 @@ class ConfigController extends Controller {
 	 * @return DataResponse
 	 */
 	public function setConfig(array $values): DataResponse {
+		foreach ($values as $key => $value) {
+			$this->config->setUserValue($this->userId, Application::APP_ID, $key, $value);
+		}
+		return new DataResponse('');
+	}
+
+	/**
+	 *
+	 * @param array $values
+	 * @return DataResponse
+	 */
+	public function setAdminConfig(array $values): DataResponse {
 		if (isset($values['login'], $values['password'], $values['server_url'])) {
 			return $this->loginWithCredentials($values['server_url'], $values['login'], $values['password']);
 		}
@@ -51,18 +63,18 @@ class ConfigController extends Controller {
 		if (isset($values['user_name'])) {
 //			$this->jellyfinReferenceProvider->invalidateUserCache($this->userId);
 			if ($values['user_name'] === '') {
-				$logoutResponse = $this->jellyfinAPIService->logout($this->userId);
-				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'user_id');
-				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'user_name');
-				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'server_id');
-				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'server_name');
-				$this->config->deleteUserValue($this->userId, Application::APP_ID, 'token');
+				$logoutResponse = $this->jellyfinAPIService->logout();
+				$this->config->deleteAppValue(Application::APP_ID, 'user_id');
+				$this->config->deleteAppValue(Application::APP_ID, 'user_name');
+				$this->config->deleteAppValue(Application::APP_ID, 'server_id');
+				$this->config->deleteAppValue(Application::APP_ID, 'server_name');
+				$this->config->deleteAppValue(Application::APP_ID, 'token');
 				return new DataResponse($result);
 			}
 		}
 
 		foreach ($values as $key => $value) {
-			$this->config->setUserValue($this->userId, Application::APP_ID, $key, $value);
+			$this->config->setAppValue(Application::APP_ID, $key, $value);
 		}
 
 		return new DataResponse($result);
@@ -74,13 +86,13 @@ class ConfigController extends Controller {
 			$result['AccessToken'], $result['ServerId'], $result['User'],
 			$result['User']['Name'], $result['User']['Id']
 		)) {
-			$this->config->setUserValue($this->userId, Application::APP_ID, 'token', $result['AccessToken']);
-			$this->config->setUserValue($this->userId, Application::APP_ID, 'server_id', $result['ServerId']);
-			$this->config->setUserValue($this->userId, Application::APP_ID, 'user_id', $result['User']['Id']);
-			$this->config->setUserValue($this->userId, Application::APP_ID, 'user_name', $result['User']['Name']);
+			$this->config->setAppValue(Application::APP_ID, 'token', $result['AccessToken']);
+			$this->config->setAppValue(Application::APP_ID, 'server_id', $result['ServerId']);
+			$this->config->setAppValue(Application::APP_ID, 'user_id', $result['User']['Id']);
+			$this->config->setAppValue(Application::APP_ID, 'user_name', $result['User']['Name']);
 			$serverInfo = $this->jellyfinAPIService->request($this->userId, 'system/info');
 			if (isset($serverInfo['ServerName'])) {
-				$this->config->setUserValue($this->userId, Application::APP_ID, 'server_name', $serverInfo['ServerName']);
+				$this->config->setAppValue(Application::APP_ID, 'server_name', $serverInfo['ServerName']);
 			}
 			return new DataResponse([
 				'user_id' => $result['User']['Id'],

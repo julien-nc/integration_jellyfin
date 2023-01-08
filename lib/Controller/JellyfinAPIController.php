@@ -11,7 +11,9 @@
 
 namespace OCA\Jellyfin\Controller;
 
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
+use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IRequest;
@@ -61,5 +63,22 @@ class JellyfinAPIController extends OCSController {
 			$response->cacheFor(60 * 60 * 24);
 			return $response;
 		}
+	}
+
+	/**
+	 * Redirects to the item's download link
+	 *
+	 * @NoAdminRequired
+	 * @NoCSRFRequired
+	 *
+	 * @param string $itemId
+	 * @return DataResponse|RedirectResponse
+	 */
+	public function internalMediaLink(string $itemId) {
+		$downloadLink = $this->jellyfinAPIService->getDownloadLink($itemId);
+		if ($downloadLink === null) {
+			return new DataResponse('', Http::STATUS_FORBIDDEN);
+		}
+		return new RedirectResponse($downloadLink);
 	}
 }
