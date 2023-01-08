@@ -14,6 +14,7 @@ namespace OCA\Jellyfin\Service;
 use Exception;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
+use OC_Helper;
 use OCA\Jellyfin\AppInfo\Application;
 use OCP\Http\Client\IClient;
 use OCP\IConfig;
@@ -51,12 +52,83 @@ class JellyfinAPIService {
 	 * @return array
 	 */
 	public function getItemInfo(string $itemId): array {
-		// TODO
-		$response = $this->request($itemId);
-		if (!isset($response['error']) && isset($response['data'])) {
-			return $response['data'];
+		$jfUserId = $this->config->getAppValue(Application::APP_ID, 'user_id');
+		$endpoint = 'users/' . $jfUserId . '/items/' . $itemId;
+		return $this->request(null, $endpoint);
+	}
+
+	/**
+	 * @param array $item
+	 * @return string
+	 */
+	public function getItemMainText(array $item): string {
+		$name = $item['Name'] ?? '';
+		$originalTitle = $item['OriginalTitle'] ?? '';
+		if ($originalTitle) {
+			$originalTitle .= ' (' . $originalTitle . ')';
 		}
-		return $response;
+
+		$icon = '';
+		$type = $item['MediaType'] ?? $item['Type'] ?? '';
+		if ($type === 'Video') {
+			$icon = '🎥 ';
+		} elseif ($type === 'Audio' || $type === 'MusicAlbum') {
+			$icon = '🎧 ';
+		}
+		return $icon . $name . $originalTitle;
+	}
+
+	/**
+	 * @param array $item
+	 * @return string
+	 */
+	public function getItemSubText(array $item): string {
+		$size = 0;
+		if (isset($item['MediaSources']) && is_array($item['MediaSources'])) {
+			foreach ($item['MediaSources'] as $source) {
+				$size += $source['Size'] ?? 0;
+			}
+		}
+		$formattedSize = '';
+		if ($size !== 0) {
+			$formattedSize = ' (📂 ' . OC_Helper::humanFileSize($size) . ')';
+		}
+
+		$productionYear = $item['ProductionYear'] ?? '';
+		if ($productionYear) {
+			$productionYear = $this->l10n->t('Produced in %1$s', [$productionYear]);
+		}
+
+		return $productionYear . $formattedSize;
+	}
+
+	/**
+	 * @param array $item
+	 * @param int|null $fillHeight
+	 * @param int|null $fillWidth
+	 * @param int|null $quality
+	 * @return string
+	 */
+	public function getItemThumbnailUrl(array $item, ?int $fillHeight = 44, ?int $fillWidth = 44, ?int $quality = null): string {
+		$routeParams = [
+			'itemId' => $item['Id'],
+			'fallbackName' => $item['Name'],
+		];
+		if ($fillWidth !== null) {
+			$routeParams['fillWidth'] = $fillWidth;
+		}
+		if ($fillHeight !== null) {
+			$routeParams['fillHeight'] = $fillHeight;
+		}
+		if ($quality !== null) {
+			$routeParams['quality'] = $quality;
+		}
+		return $this->urlGenerator->getAbsoluteURL(
+			$this->urlGenerator->linkToRoute(
+				Application::APP_ID . '.jellyfinAPI.getMediaImage',
+				$routeParams
+			)
+		);
 	}
 
 	/**

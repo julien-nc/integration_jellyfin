@@ -24,7 +24,6 @@ declare(strict_types=1);
  */
 namespace OCA\Jellyfin\Search;
 
-use OC_Helper;
 use OCA\Jellyfin\Service\JellyfinAPIService;
 use OCA\Jellyfin\AppInfo\Application;
 use OCP\App\IAppManager;
@@ -127,37 +126,11 @@ class JellyfinSearchItemsProvider implements IProvider {
 	}
 
 	protected function getMainText(array $entry): string {
-		$name = $entry['Name'] ?? '';
-		$originalTitle = $entry['OriginalTitle'] ?? '';
-		if ($originalTitle) {
-			$originalTitle .= ' (' . $originalTitle . ')';
-		}
-
-		$icon = '';
-		$type = $entry['MediaType'] ?? $entry['Type'] ?? '';
-		if ($type === 'Video') {
-			$icon = '🎥 ';
-		} elseif ($type === 'Audio' || $type === 'MusicAlbum') {
-			$icon = '🎧 ';
-		}
-		return $icon . $name . $originalTitle;
+		return $this->jellyfinAPIService->getItemMainText($entry);
 	}
 
 	protected function getSubline(array $entry): string {
-		$size = 0;
-		if (isset($entry['MediaSources']) && is_array($entry['MediaSources'])) {
-			foreach ($entry['MediaSources'] as $source) {
-				$size += $source['Size'] ?? 0;
-			}
-		}
-		$formattedSize = '';
-		if ($size !== 0) {
-			$formattedSize = ' (📂 ' . OC_Helper::humanFileSize($size) . ')';
-		}
-
-		$productionYear = $entry['ProductionYear'] ?? '';
-
-		return $productionYear . $formattedSize;
+		return $this->jellyfinAPIService->getItemSubText($entry);
 	}
 
 	protected function getLink(array $entry): string {
@@ -176,12 +149,6 @@ class JellyfinSearchItemsProvider implements IProvider {
 	}
 
 	protected function getThumbnailUrl(array $entry): string {
-		return $this->urlGenerator->linkToRoute(
-			Application::APP_ID . '.jellyfinAPI.getMediaImage',
-			[
-				'itemId' => $entry['Id'],
-				'fallbackName' => $entry['Name'],
-			]
-		);
+		return $this->jellyfinAPIService->getItemThumbnailUrl($entry);
 	}
 }

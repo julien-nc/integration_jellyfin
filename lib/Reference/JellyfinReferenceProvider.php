@@ -113,14 +113,19 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implement
 	 */
 	public function matchReference(string $referenceText): bool {
 		$adminLinkPreviewEnabled = $this->config->getAppValue(Application::APP_ID, 'link_preview_enabled', '1') === '1';
-		if (!$adminLinkPreviewEnabled) {
+		$userLinkPreviewEnabled = $this->config->getUserValue($this->userId, Application::APP_ID, 'link_preview_enabled', '1') === '1';
+		if (!$adminLinkPreviewEnabled || !$userLinkPreviewEnabled) {
 			return false;
 		}
-		// 2 types of supported links:
-		// https://giphy.com/gifs/seal-sappy-seals-BaDsH4FpMBnqdK8J0g
-		// https://media.giphy.com/media/BaDsH4FpMBnqdK8J0g/giphy.gif
-		return preg_match('/^(?:https?:\/\/)?(?:www\.)?giphy\.com\/gifs\/[^\/?&]+$/i', $referenceText) === 1
-			|| preg_match('/^(?:https?:\/\/)?(?:www\.)?media\.giphy\.com\/media\/[^\/?&]+\/giphy\.gif$/i', $referenceText) === 1;
+
+		$start = $this->urlGenerator->getAbsoluteURL('/apps/' . Application::APP_ID);
+		$startIndex = $this->urlGenerator->getAbsoluteURL('/index.php/apps/' . Application::APP_ID);
+
+		// link example: https://nextcloud.local/index.php/apps/integration_jellyfin/i/174af3d43325e1e8fa9f394e6096f3ba
+		$noIndexMatch = preg_match('/^' . preg_quote($start, '/') . '\/i\/[0-9a-z]+$/i', $referenceText) === 1;
+		$indexMatch = preg_match('/^' . preg_quote($startIndex, '/') . '\/i\/[0-9a-z]+$/i', $referenceText) === 1;
+
+		return $noIndexMatch || $indexMatch;
 	}
 
 	/**
@@ -128,25 +133,21 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implement
 	 */
 	public function resolveReference(string $referenceText): ?IReference {
 		if ($this->matchReference($referenceText)) {
-			$gifId = $this->getGifId($referenceText);
-			if ($gifId !== null) {
-				$gifInfo = $this->jellyfinAPIService->getGifInfo($gifId);
-				if ($gifInfo !== null
-					&& isset(
-						$gifInfo['title'], $gifInfo['slug'], $gifInfo['images'],
-						$gifInfo['images']['original'], $gifInfo['images']['original']['url']
-					)
-				) {
+			$itemId = $this->getItemId($referenceText);
+			if ($itemId !== null) {
+				$itemInfo = $this->jellyfinAPIService->getItemInfo($itemId);
+				if (!isset($itemInfo['error'])) {
 					$reference = new Reference($referenceText);
-					$reference->setTitle($gifInfo['title'] ?? 'Unknown title');
-					$reference->setDescription($gifInfo['username'] ?? $gifInfo['slug'] ?? $gifId);
-					$imageUrl = $this->jellyfinAPIService->getGifProxiedUrl($gifInfo);
-					$reference->setImageUrl($imageUrl);
-
-					$gifInfo['proxied_url'] = $imageUrl;
+					$reference->setTitle($this->jellyfinAPIService->getItemMainText($itemInfo));
+					$description = $this->jellyfinAPIService->getItemSubText($itemInfo);
+					if (isset($itemInfo['Overview'])) {
+						$description .= ' - ' . $itemInfo['Overview'];
+					}
+					$reference->setDescription($description);
+					$reference->setImageUrl($this->jellyfinAPIService->getItemThumbnailUrl($itemInfo, 300, 300));
 					$reference->setRichObject(
 						self::RICH_OBJECT_TYPE,
-						$gifInfo,
+						$itemInfo,
 					);
 					return $reference;
 				}
@@ -155,6 +156,18 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implement
 			return $this->linkReferenceProvider->resolveReference($referenceText);
 		}
 
+		return null;
+	}
+
+	/**
+	 * @param string $url
+	 * @return string|null
+	 */
+	private function getItemId(string $url): ?string {
+		preg_match('/\/i\/([0-9a-z]+)$/i', $url, $matches);
+		if (count($matches) > 1) {
+			return $matches[1];
+		}
 		return null;
 	}
 
@@ -172,7 +185,7 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implement
 	 * @inheritDoc
 	 */
 	public function getCacheKey(string $referenceId): ?string {
-		$gifId = $this->getGifId($referenceId);
+		$gifId = $this->getItemId($referenceId);
 		if ($gifId !== null) {
 			return $gifId;
 		}
