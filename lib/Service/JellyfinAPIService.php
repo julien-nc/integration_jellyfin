@@ -88,6 +88,12 @@ class JellyfinAPIService {
 			'Recursive' => 'true',
 			'Limit' => $limit,
 			'startIndex' => $offset,
+			'fields' => implode(',', ['MediaSources', 'OriginalTitle']),
+			'includeItemTypes' => implode(',', [
+				'Audio', 'AudioBook', 'Book', 'Episode',
+				'Movie', 'MusicAlbum', 'Photo', 'PhotoAlbum',
+				'Recording', 'Series', 'Trailer', 'Video'
+			]),
 		];
 		$result = $this->request($userId, 'users/' . $jfUserId . '/items', $params);
 		if (!isset($result['error']) && isset($result['Items']) && is_array($result['Items'])) {
