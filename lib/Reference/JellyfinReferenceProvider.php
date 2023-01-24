@@ -74,7 +74,7 @@ class JellyfinReferenceProvider extends ADiscoverableReferenceProvider implement
 	 * @inheritDoc
 	 */
 	public function getTitle(): string {
-		return $this->l10n->t('Jellyfin items');
+		return $this->l10n->t('Jellyfin media items');
 	}
 
 	/**
